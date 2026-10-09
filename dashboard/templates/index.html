@@ -3,134 +3,261 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SpotZero Nexus Dashboard</title>
+<title>SpotZero Nexus Control Room</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/leaflet.css">
 <style>
-  :root{
-    --bg:#f3f6f2; --panel:#ffffff; --ink:#14231b; --muted:#5d6f64; --line:#dfe7e1;
-    --green:#1f8a4c; --green-soft:#e3f3e9; --amber:#d98b06; --amber-soft:#fcf1dc;
-    --red:#c83a2c; --red-soft:#fbe5e2; --blue:#2d6cdf;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,sans-serif}
-  header{display:flex;align-items:center;justify-content:space-between;gap:16px;
-    padding:18px 28px;background:#0f2a1c;color:#eaf5ee;flex-wrap:wrap}
-  .brand{display:flex;align-items:center;gap:12px}
-  .logo{width:38px;height:38px;border-radius:10px;background:var(--green);display:grid;place-items:center;
-    font:700 18px "Space Grotesk";color:#fff}
-  h1{font:700 22px "Space Grotesk";margin:0;letter-spacing:.2px}
-  .sub{font-size:13px;color:#a9c7b5}
-  .live{font-size:13px;color:#a9c7b5;display:flex;align-items:center;gap:8px}
-  .dot{width:9px;height:9px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.2)}
-  .dot.off{background:#f87171;box-shadow:0 0 0 4px rgba(248,113,113,.2)}
-  main{max-width:1400px;margin:0 auto;padding:22px 28px 40px;display:grid;gap:18px}
-  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
-  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
-  .kpi .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
-  .kpi .val{font:700 30px "Space Grotesk";margin-top:4px}
-  .kpi .hint{font-size:12px;color:var(--muted)}
-  .grid{display:grid;grid-template-columns:340px 1fr 1fr;gap:18px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0}
-  .panel h2{font:700 16px "Space Grotesk";margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
-  .tag{font:600 11px Inter;padding:3px 9px;border-radius:99px;letter-spacing:.4px}
-  .tag.ok{background:var(--green-soft);color:var(--green)}
-  .tag.full{background:var(--red-soft);color:var(--red)}
-  .tag.fault{background:var(--amber-soft);color:var(--amber)}
-  .binwrap{display:flex;gap:18px;align-items:flex-end}
-  .bin{position:relative;width:120px;height:200px;border:4px solid #2b3d33;border-top:none;
-    border-radius:0 0 18px 18px;overflow:hidden;background:#f7faf8;flex:none}
-  .bin::before{content:"";position:absolute;left:-10px;right:-10px;top:-4px;height:10px;background:#2b3d33;border-radius:6px}
-  .fill{position:absolute;left:0;right:0;bottom:0;height:0;background:var(--green);transition:height .8s, background .4s}
-  .thr{position:absolute;left:0;right:0;border-top:2px dashed var(--red);opacity:.7}
-  .thr span{position:absolute;right:4px;top:-18px;font-size:11px;color:var(--red);font-weight:600}
-  .binfacts{font-size:13px;color:var(--muted);display:grid;gap:6px}
-  .binfacts b{color:var(--ink);font-weight:600}
-  .bigpct{font:700 44px "Space Grotesk";line-height:1;color:var(--ink)}
-  button{font:600 13px Inter;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
-  .btn{background:var(--green);color:#fff}
-  .btn:disabled{background:#b9c9bf;cursor:not-allowed}
-  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
-  #map{height:290px;border-radius:12px;background:#e6efe9}
-  .chartbox{position:relative;height:290px}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
-  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
-  .scroll{max-height:290px;overflow:auto}
-  .cm td,.cm th{text-align:center;padding:6px 4px}
-  .cm td.diag{background:var(--green-soft);font-weight:700;color:var(--green)}
-  .cm td.off{color:var(--red)}
-  .empty{color:var(--muted);font-size:13px;padding:20px 0;text-align:center}
-  footer{text-align:center;font-size:12px;color:var(--muted);padding-bottom:20px}
-  @media (max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.grid,.grid2{grid-template-columns:1fr}}
-  @media (max-width:560px){.kpis{grid-template-columns:repeat(2,1fr)}main,header{padding-left:16px;padding-right:16px}}
+/* Layout: control room — slim icon rail, KPI strip, bin gauge + fill history, then map / alerts / streams, then AI quality */
+:root{
+  --bg:#0b1310; --bg2:#0e1814; --panel:#121d18; --panel-hi:#17241e; --line:rgba(220,240,228,.08); --line-hi:rgba(220,240,228,.16);
+  --ink:#e7efe9; --muted:#8fa498; --faint:#5f7368;
+  --brass:#d8b36a; --brass-soft:rgba(216,179,106,.14);
+  --ok:#55c38f; --ok-soft:rgba(85,195,143,.14); --warn:#f0a73a; --warn-soft:rgba(240,167,58,.15); --crit:#f0675a; --crit-soft:rgba(240,103,90,.15);
+  --plastic:#5b9bff; --paper:#d39b4a; --glass:#3cc4b4; --organic:#7dc75b; --metal:#a3adb8; --reject:#f0675a;
+  --f-ui:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif; --f-num:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:radial-gradient(1200px 600px at 75% -10%,rgba(216,179,106,.08),transparent 60%),radial-gradient(900px 500px at -10% 30%,rgba(85,195,143,.06),transparent 60%),var(--bg);
+  color:var(--ink);font:14px/1.5 var(--f-ui);-webkit-font-smoothing:antialiased}
+a{color:var(--brass)}
+button{font:inherit}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+
+.app{display:grid;grid-template-columns:72px minmax(0,1fr);min-height:100%}
+.rail{position:sticky;top:0;height:100vh;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:18px 0;gap:8px}
+.mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(140deg,var(--brass),#9c7a35);display:grid;place-items:center;color:#1b140a;font:800 15px var(--f-ui);letter-spacing:-.5px;margin-bottom:14px}
+.rail a{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--faint);text-decoration:none;position:relative}
+.rail a:hover,.rail a.on{background:var(--panel-hi);color:var(--ink)}
+.rail a.on::before{content:"";position:absolute;left:-14px;top:12px;bottom:12px;width:3px;border-radius:3px;background:var(--brass)}
+.rail svg{width:20px;height:20px}
+.rail .tip{position:absolute;left:54px;white-space:nowrap;background:var(--panel-hi);border:1px solid var(--line-hi);padding:4px 9px;border-radius:8px;font-size:12px;color:var(--ink);opacity:0;pointer-events:none;transition:opacity .15s}
+.rail a:hover .tip{opacity:1}
+
+.main{padding:22px 28px 36px;display:grid;gap:18px;max-width:1500px;width:100%;margin:0 auto;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.top h1{margin:0;font:800 22px/1.15 var(--f-ui);letter-spacing:-.3px}
+.top .crumb{font-size:12px;color:var(--muted);letter-spacing:.3px}
+.top-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid var(--line-hi);background:var(--panel);font-size:12.5px;color:var(--muted)}
+.pill b{color:var(--ink);font-weight:600}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(85,195,143,.6);animation:pulse 2s infinite}
+.live-dot.off{background:var(--crit);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(85,195,143,.55)}70%{box-shadow:0 0 0 8px rgba(85,195,143,0)}100%{box-shadow:0 0 0 0 rgba(85,195,143,0)}}
+.btn{border:1px solid var(--line-hi);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px}
+.btn:hover{background:var(--panel-hi)}
+.btn-primary{background:linear-gradient(180deg,#e3c07a,#c99b4c);border-color:transparent;color:#1b140a}
+.btn-primary:hover{background:linear-gradient(180deg,#ebca86,#d1a557)}
+.btn-primary:disabled{background:var(--panel-hi);color:var(--faint);cursor:not-allowed;border-color:var(--line)}
+.demo-flag{font:700 11px var(--f-num);letter-spacing:.6px;color:var(--warn);background:var(--warn-soft);padding:5px 10px;border-radius:8px}
+
+.card{background:linear-gradient(180deg,var(--panel-hi),var(--panel));border:1px solid var(--line);border-radius:18px;padding:18px 20px;min-width:0;box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px -18px rgba(0,0,0,.6)}
+.card h2{margin:0 0 14px;font:700 14px var(--f-ui);display:flex;justify-content:space-between;align-items:center;gap:10px;letter-spacing:.1px}
+.card h2 .meta{font:500 12px var(--f-ui);color:var(--muted)}
+.label{font-size:11px;letter-spacing:.9px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.kpi{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;padding:16px 18px}
+.kpi .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center}
+.kpi .ic svg{width:20px;height:20px}
+.kpi .v{font:700 26px/1.1 var(--f-num);letter-spacing:-.5px}
+.kpi .s{font-size:12px;color:var(--muted)}
+
+.row{display:grid;gap:18px}
+.r1{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+.r2{grid-template-columns:repeat(3,minmax(0,1fr))}
+.r3{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+
+.bin{display:grid;grid-template-columns:220px minmax(0,1fr);gap:22px;align-items:center}
+.gauge{position:relative;width:220px;height:220px}
+.gauge svg{width:100%;height:100%;transform:rotate(-90deg)}
+.gauge .ctr{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.gauge .pct{font:700 50px/1 var(--f-num);letter-spacing:-2px}
+.gauge .pct small{font-size:22px;color:var(--muted);letter-spacing:0}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:700 11px var(--f-ui);letter-spacing:.7px;text-transform:uppercase;margin-top:8px}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.chip.ok{color:var(--ok);background:var(--ok-soft)} .chip.full{color:var(--crit);background:var(--crit-soft)} .chip.fault{color:var(--warn);background:var(--warn-soft)}
+.facts{display:grid;gap:0}
+.fact{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.fact:last-of-type{border-bottom:none}
+.fact span{color:var(--muted)} .fact b{font-weight:600;text-align:right}
+.eta{margin:6px 0 14px;padding:12px 14px;border-radius:12px;background:var(--brass-soft);border:1px solid rgba(216,179,106,.25)}
+.eta .label{color:var(--brass)}
+.eta .v{font:700 20px var(--f-num);color:var(--ink)}
+.eta .s{font-size:12px;color:var(--muted)}
+.chartbox{position:relative;height:300px}
+.chartbox.sm{height:240px}
+
+#map,.mapstub{height:240px;border-radius:14px;overflow:hidden;background:#0f1a15;border:1px solid var(--line)}
+.leaflet-container{background:#0f1a15;font-family:var(--f-ui)}
+.loc{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12.5px;color:var(--muted)}
+.loc b{color:var(--ink);font-weight:600}
+
+.feed{display:grid;gap:8px;max-height:262px;overflow:auto;padding-right:4px}
+.ev{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid var(--line);font-size:13px}
+.ev .bar{width:4px;align-self:stretch;border-radius:4px}
+.ev .t{font:500 12px var(--f-num);color:var(--muted)}
+.ev .sub{font-size:12px;color:var(--muted)}
+.empty{color:var(--muted);text-align:center;padding:26px 8px;font-size:13px;border:1px dashed var(--line-hi);border-radius:12px}
+
+.donutwrap{display:grid;grid-template-columns:180px minmax(0,1fr);gap:16px;align-items:center}
+.legend{display:grid;gap:7px;font-size:13px}
+.legend div{display:grid;grid-template-columns:10px 1fr auto;gap:9px;align-items:center}
+.legend i{width:10px;height:10px;border-radius:3px}
+.legend b{font:600 13px var(--f-num)}
+
+.heat{width:100%;border-collapse:separate;border-spacing:4px;font-size:12px}
+.heat th{color:var(--muted);font-weight:600;text-transform:capitalize;padding:2px 4px}
+.heat th.rh{text-align:left}
+.heat td{height:42px;border-radius:8px;text-align:center;font:700 13px var(--f-num)}
+.acc{display:flex;gap:18px;margin-top:12px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.acc b{color:var(--ink);font:700 15px var(--f-num)}
+
+table.ev-t{width:100%;border-collapse:collapse;font-size:13px}
+.ev-t th{color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.8px;text-transform:uppercase;text-align:left;padding:8px 8px;border-bottom:1px solid var(--line)}
+.ev-t td{padding:9px 8px;border-bottom:1px solid var(--line)}
+.ev-t tr:last-child td{border-bottom:none}
+.cls{display:inline-flex;align-items:center;gap:7px;font-weight:600;text-transform:capitalize}
+.cls i{width:8px;height:8px;border-radius:50%}
+.confbar{display:inline-block;width:64px;height:6px;border-radius:6px;background:rgba(255,255,255,.07);vertical-align:middle;margin-right:8px;overflow:hidden}
+.confbar span{display:block;height:100%;border-radius:6px}
+.okc{color:var(--ok);font-weight:700} .bad{color:var(--crit);font-weight:700}
+.scroll{max-height:300px;overflow:auto}
+
+footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--faint);font-size:12px;padding-top:4px}
+footer a{color:var(--muted)}
+
+.toast{position:fixed;right:22px;bottom:22px;max-width:360px;background:var(--panel-hi);border:1px solid rgba(240,103,90,.4);border-left:4px solid var(--crit);border-radius:12px;padding:14px 16px;box-shadow:0 20px 40px -12px rgba(0,0,0,.6);transform:translateY(20px);opacity:0;transition:all .3s;z-index:1000}
+.toast.show{transform:none;opacity:1}
+.toast b{display:block;margin-bottom:2px}
+.toast span{color:var(--muted);font-size:13px}
+.modal{position:fixed;inset:0;background:rgba(5,9,7,.7);display:grid;place-items:center;z-index:1001;padding:16px}
+.modal .box{background:var(--panel-hi);border:1px solid var(--line-hi);border-radius:16px;padding:22px;max-width:380px;width:100%}
+.modal h3{margin:0 0 6px;font-size:16px} .modal p{margin:0 0 18px;color:var(--muted)}
+.modal .acts{display:flex;justify-content:flex-end;gap:10px}
+.modal[hidden]{display:none}
+.btn-danger{background:var(--crit);border-color:transparent;color:#1d0805}
+
+@media (max-width:1200px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.r1,.r3{grid-template-columns:minmax(0,1fr)}.r2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){.app{grid-template-columns:minmax(0,1fr)}.rail{display:none}.main{padding:16px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.r2{grid-template-columns:minmax(0,1fr)}.bin{grid-template-columns:minmax(0,1fr);justify-items:center}.bin .facts-wrap{width:100%}.donutwrap{grid-template-columns:minmax(0,1fr);justify-items:center}}
+@media (prefers-reduced-motion:reduce){.live-dot{animation:none}.toast{transition:none}}
 </style>
 </head>
 <body>
-<header>
-  <div class="brand">
-    <div class="logo">S0</div>
-    <div>
-      <h1>SpotZero Nexus</h1>
-      <div class="sub">Smart roadside waste collection &amp; AI-assisted segregation</div>
-    </div>
-  </div>
-  <div class="live"><span class="dot" id="srvdot"></span><span id="updated">Connecting…</span>
-    <button class="btn-ghost" id="resetBtn" title="Clear all test data">Reset data</button></div>
-</header>
+<div class="app">
+  <nav class="rail" aria-label="Sections">
+    <div class="mark">S0</div>
+    <a href="#overview" class="on" aria-label="Overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span class="tip">Overview</span></a>
+    <a href="#bins" aria-label="Smart bin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1.2 13h9.6L18 7"/></svg><span class="tip">Smart bin</span></a>
+    <a href="#field" aria-label="Location and alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span class="tip">Location &amp; alerts</span></a>
+    <a href="#sorting" aria-label="Sorting station"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17h18M6 17V9m6 8V5m6 12v-6"/></svg><span class="tip">Sorting station</span></a>
+  </nav>
 
-<main>
-  <section class="kpis">
-    <div class="kpi"><div class="label">Current fill</div><div class="val" id="k-fill">–</div><div class="hint" id="k-fill-h">BIN-001</div></div>
-    <div class="kpi"><div class="label">Collection alerts</div><div class="val" id="k-alerts">0</div><div class="hint">raised at ≥ <span class="thrv">80</span>%</div></div>
-    <div class="kpi"><div class="label">Collections done</div><div class="val" id="k-coll">0</div><div class="hint">alerts cleared</div></div>
-    <div class="kpi"><div class="label">Items sorted</div><div class="val" id="k-items">0</div><div class="hint">sorting station</div></div>
-    <div class="kpi"><div class="label">AI accuracy</div><div class="val" id="k-ai">–</div><div class="hint" id="k-ai-h">no verified items</div></div>
-    <div class="kpi"><div class="label">Sorting accuracy</div><div class="val" id="k-sort">–</div><div class="hint" id="k-sort-h">no checked items</div></div>
-  </section>
+  <div class="main">
+    <header class="top" id="overview">
+      <div>
+        <div class="crumb">INNOVATE4ENVIRONMENT · SOCIAL ACTION PROJECT</div>
+        <h1>SpotZero Nexus Control Room</h1>
+      </div>
+      <div class="top-r">
+        
+        <span class="pill"><span class="live-dot" id="liveDot"></span><span id="liveTxt">Connecting…</span></span>
+        <span class="pill">Alert at <b class="num" id="thrPill">80%</b></span>
+        <button class="btn" id="resetBtn" type="button">Reset data</button>
+      </div>
+    </header>
 
-  <section class="grid">
-    <div class="panel">
-      <h2>Smart bin <span class="tag ok" id="bintag">–</span></h2>
-      <div class="binwrap">
-        <div class="bin"><div class="fill" id="fillbar"></div><div class="thr" id="thrline"><span>80%</span></div></div>
-        <div class="binfacts">
-          <div class="bigpct" id="bigpct">–</div>
-          <div>ID <b id="b-id">BIN-001</b></div>
-          <div>Location <b id="b-loc">–</b></div>
-          <div>Distance <b id="b-dist">–</b></div>
-          <div>Link <b id="b-online">–</b></div>
-          <div>Last update <b id="b-ts">–</b></div>
-          <div>Collection <b id="b-coll">–</b></div>
+    <section class="kpis">
+      <div class="card kpi"><div class="ic" style="background:var(--crit-soft);color:var(--crit)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg></div>
+        <div><div class="label">Collection alerts</div><div class="v" id="kAlerts">0</div><div class="s">raised at threshold</div></div></div>
+      <div class="card kpi"><div class="ic" style="background:var(--ok-soft);color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l4 4 10-10"/></svg></div>
+        <div><div class="label">Collections done</div><div class="v" id="kColl">0</div><div class="s" id="kCollS">alerts cleared</div></div></div>
+      <div class="card kpi"><div class="ic" style="background:rgba(91,155,255,.14);color:var(--plastic)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17h18M7 13l3-6 4 4 3-5"/></svg></div>
+        <div><div class="label">Items sorted</div><div class="v" id="kItems">0</div><div class="s" id="kItemsS">sorting station</div></div></div>
+      <div class="card kpi"><div class="ic" style="background:var(--brass-soft);color:var(--brass)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 9h6v6H9z"/></svg></div>
+        <div><div class="label">AI accuracy</div><div class="v" id="kAi">–</div><div class="s" id="kAiS">no verified items</div></div></div>
+      <div class="card kpi"><div class="ic" style="background:rgba(60,196,180,.14);color:var(--glass)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <div><div class="label">Sorting accuracy</div><div class="v" id="kSort">–</div><div class="s" id="kSortS">no checked items</div></div></div>
+    </section>
+
+    <section class="row r1" id="bins">
+      <div class="card">
+        <h2>Smart bin <span class="meta" id="binId">BIN-001</span></h2>
+        <div class="bin">
+          <div class="gauge">
+            <svg viewBox="0 0 220 220" aria-hidden="true">
+              <circle cx="110" cy="110" r="92" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="16"/>
+              <circle id="ring" cx="110" cy="110" r="92" fill="none" stroke="var(--ok)" stroke-width="16" stroke-linecap="round" stroke-dasharray="0 578" style="transition:stroke-dasharray .9s cubic-bezier(.2,.8,.2,1),stroke .4s"/>
+              <line id="thrTick" x1="110" y1="10" x2="110" y2="30" stroke="var(--crit)" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            <div class="ctr"><div><div class="pct num" id="pct">–</div><span class="chip ok" id="chip">–</span></div></div>
+          </div>
+          <div class="facts-wrap">
+            <div class="eta"><div class="label">Predicted full in</div><div class="v" id="eta">–</div><div class="s" id="etaS">from the recent fill rate</div></div>
+            <div class="facts">
+              <div class="fact"><span>Location</span><b id="fLoc">–</b></div>
+              <div class="fact"><span>Distance to waste</span><b class="num" id="fDist">–</b></div>
+              <div class="fact"><span>Link</span><b id="fLink">–</b></div>
+              <div class="fact"><span>Last reading</span><b class="num" id="fTs">–</b></div>
+              <div class="fact"><span>Collection</span><b id="fColl">–</b></div>
+            </div>
+            <button class="btn btn-primary" id="collectBtn" type="button" disabled style="margin-top:14px;width:100%">Mark as collected</button>
+          </div>
         </div>
       </div>
-      <div style="margin-top:16px"><button class="btn" id="collectBtn" disabled>Mark as collected</button></div>
-    </div>
-    <div class="panel"><h2>Fill level history</h2><div class="chartbox"><canvas id="histChart"></canvas></div></div>
-    <div class="panel"><h2>Bin location</h2><div id="map"></div></div>
-  </section>
+      <div class="card">
+        <h2>Fill level history <span class="meta" id="histMeta">last readings</span></h2>
+        <div class="chartbox"><canvas id="hist"></canvas></div>
+      </div>
+    </section>
 
-  <section class="grid2">
-    <div class="panel"><h2>Alert log</h2><div class="scroll"><table>
-      <thead><tr><th>Raised</th><th>Type</th><th>Fill</th><th>Cleared</th></tr></thead>
-      <tbody id="alerts"></tbody></table></div></div>
-    <div class="panel"><h2>Items by destination</h2><div class="chartbox"><canvas id="classChart"></canvas></div></div>
-    <div class="panel"><h2>AI confusion matrix <span class="sub" style="color:var(--muted);font:500 12px Inter">rows = actual</span></h2>
-      <div id="cm"></div></div>
-  </section>
+    <section class="row r2" id="field">
+      <div class="card">
+        <h2>Location</h2>
+        <div id="map"></div>
+        <div class="loc"><span><b id="locName">–</b></span><span class="num" id="locCoord">–</span></div>
+      </div>
+      <div class="card">
+        <h2>Alert timeline <span class="meta" id="alertMeta"></span></h2>
+        <div class="feed" id="alerts"></div>
+      </div>
+      <div class="card">
+        <h2>Waste streams <span class="meta">items by destination</span></h2>
+        <div class="donutwrap"><div class="chartbox sm" style="height:180px;width:180px"><canvas id="donut"></canvas></div><div class="legend" id="legend"></div></div>
+      </div>
+    </section>
 
-  <section class="panel"><h2>Recent sorting events</h2><div class="scroll"><table>
-    <thead><tr><th>#</th><th>Time</th><th>Predicted</th><th>Confidence</th><th>Actual</th><th>Destination</th><th>Sorted OK</th></tr></thead>
-    <tbody id="sorts"></tbody></table></div></section>
-</main>
-<footer>SpotZero Nexus · Innovate4Environment Social Action Project · data refreshes every 3 s · Export CSV: <a href="/export/readings.csv">readings</a> · <a href="/export/alerts.csv">alerts</a> · <a href="/export/sort_events.csv">sorting events</a></footer>
+    <section class="row r3" id="sorting">
+      <div class="card">
+        <h2>AI confusion matrix <span class="meta">rows = actual · columns = predicted</span></h2>
+        <div id="heat"></div>
+        <div class="acc" id="accLine"></div>
+      </div>
+      <div class="card">
+        <h2>Recent sorting events <span class="meta" id="sortMeta"></span></h2>
+        <div class="scroll"><table class="ev-t"><thead><tr><th>#</th><th>Time</th><th>Predicted</th><th>Confidence</th><th>Actual</th><th>Bin</th><th>OK</th></tr></thead><tbody id="sorts"></tbody></table></div>
+      </div>
+    </section>
+
+    <footer>
+      <span>SpotZero Nexus · Smart roadside waste collection &amp; AI-assisted segregation · refreshes every 3 s</span>
+      <span>Export CSV: <a href="/export/readings.csv">readings</a> · <a href="/export/alerts.csv">alerts</a> · <a href="/export/sort_events.csv">sorting events</a></span>
+    </footer>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><b id="toastT"></b><span id="toastS"></span></div>
+<div class="modal" id="modal" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="mT">
+  <h3 id="mT">Reset all data?</h3><p>This deletes every reading, alert and sorting event. Use it before a fresh test run.</p>
+  <div class="acts"><button class="btn" id="mNo" type="button">Cancel</button><button class="btn btn-danger" id="mYes" type="button">Delete data</button></div></div></div>
 
 <script src="/static/chart.umd.min.js"></script>
 <script src="/static/leaflet.js"></script>
 <script>
-  // Use the local copies in /static when present (works offline); otherwise load from the CDN.
+  // Local copies in /static work offline; otherwise load from the CDN.
   if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"><\/script>');
   if (!window.L) {
     document.write('<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">');
@@ -138,126 +265,234 @@
   }
 </script>
 <script>
+const DEMO = /*DEMO*/false;
 const CLASSES = ["plastic","paper","glass","organic","metal","reject"];
-const COLORS  = {plastic:"#2d6cdf",paper:"#b07a2a",glass:"#18a39b",organic:"#3f9b3a",metal:"#6b7280",reject:"#c83a2c"};
-const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "–";
-const fmtDT = iso => iso ? new Date(iso).toLocaleString([], {day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}) : "–";
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const COL = Object.fromEntries(CLASSES.map(c=>[c, css("--"+c)]));
 const $ = id => document.getElementById(id);
+const tFmt = iso => iso ? new Date(iso).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "–";
+const dtFmt = iso => iso ? new Date(iso).toLocaleString([], {day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}) : "–";
+const esc = s => String(s ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+const RING = 2*Math.PI*92;
 
-let map, marker, histChart, classChart, currentBin = "BIN-001";
+/* ---------------- data source: Flask API, or an in-browser simulator in demo mode ---------------- */
+const api = DEMO ? demoApi() : {
+  state: () => fetch("/api/state").then(r => { if(!r.ok) throw new Error(r.status); return r.json(); }),
+  collect: id => fetch(`/api/bin/${encodeURIComponent(id)}/collected`, {method:"POST"}),
+  reset: () => fetch("/api/reset", {method:"POST"})
+};
 
-function initCharts(threshold){
-  histChart = new Chart($("histChart"), {
-    type:"line",
+function demoApi(){
+  const S = {fill:6, readings:[], alerts:[], sorts:[], aId:0, sId:0};
+  const now = () => new Date().toISOString();
+  const r = (a,b) => a + Math.random()*(b-a);
+  function binStep(ts){
+    S.fill = Math.min(100, S.fill + r(1,3.6));
+    const fault = Math.random() < .02;
+    const f = S.fill, status = fault ? "FAULT" : (f >= 80 ? "FULL" : "OK");
+    S.readings.push({ts, fill_pct: fault ? null : +f.toFixed(1), distance_cm: fault ? null : +(40*(1-f/100)).toFixed(1), status});
+    if (S.readings.length > 120) S.readings.shift();
+    if (status !== "OK" && !S.alerts.some(a => a.kind === status && !a.cleared_ts)) S.alerts.unshift({id:++S.aId, bin_id:"BIN-001", raised_ts:ts, fill_pct: fault?null:+f.toFixed(1), kind:status, cleared_ts:null});
+    if (status === "OK") S.alerts.forEach(a => { if (a.kind==="FAULT" && !a.cleared_ts) a.cleared_ts = ts; });
+  }
+  function collect(ts){ S.alerts.forEach(a => { if (a.kind==="FULL" && !a.cleared_ts) a.cleared_ts = ts; }); S.fill = r(0,6); }
+  function sortStep(ts){
+    const a = ["plastic","paper","glass","organic","plastic","paper"][Math.floor(Math.random()*6)];
+    const p = Math.random() < .8 ? a : ["plastic","paper","glass","organic"][Math.floor(Math.random()*4)];
+    const conf = p===a ? r(.74,.99) : r(.42,.82), dest = conf >= .7 ? p : "reject";
+    S.sorts.push({id:++S.sId, ts, predicted:p, confidence:+conf.toFixed(2), actual:a, destination:dest, sorted_ok: (dest===a && Math.random()<.95) ? 1 : 0});
+  }
+  const t0 = Date.now() - 46*4000;
+  for (let i=0;i<46;i++){ const ts = new Date(t0 + i*4000).toISOString(); binStep(ts); if (S.fill>=92) collect(ts); if (Math.random()<.5) sortStep(ts); }
+  setInterval(() => { const ts = now(); binStep(ts); if (S.alerts.some(a=>a.kind==="FULL"&&!a.cleared_ts) && Math.random()<.12) collect(ts); if (Math.random()<.5) sortStep(ts); }, 3000);
+  return {
+    state: async () => {
+      const last = S.readings[S.readings.length-1];
+      const by_class = {}; S.sorts.forEach(s => by_class[s.destination] = (by_class[s.destination]||0)+1);
+      const ver = S.sorts.length, okAi = S.sorts.filter(s=>s.predicted===s.actual).length, okS = S.sorts.filter(s=>s.sorted_ok).length;
+      const conf = {}; S.sorts.forEach(s => { const k = s.actual+"|"+s.predicted; conf[k] = (conf[k]||0)+1; });
+      return {
+        threshold:80,
+        bins:[{bin_id:"BIN-001", location:"Ramapuram, Chennai", lat:13.03, lng:80.18, height_cm:40, last, online:true,
+               collection: S.alerts.some(a=>a.kind==="FULL"&&!a.cleared_ts) ? "PENDING":"OK", history:S.readings.slice()}],
+        alerts:S.alerts.slice(0,50),
+        totals:{alerts_raised:S.alerts.filter(a=>a.kind==="FULL").length, collections_done:S.alerts.filter(a=>a.kind==="FULL"&&a.cleared_ts).length,
+                items_sorted:S.sorts.length, ai_accuracy: ver? +(100*okAi/ver).toFixed(1):null, ai_verified:ver,
+                sort_accuracy: ver? +(100*okS/ver).toFixed(1):null, sort_checked:ver},
+        by_class, confusion:Object.entries(conf).map(([k,n])=>{const [actual,predicted]=k.split("|");return {actual,predicted,n};}),
+        recent_sorts:S.sorts.slice(-15).reverse(), server_time:now()
+      };
+    },
+    collect: async () => collect(now()),
+    reset: async () => { S.readings=[]; S.alerts=[]; S.sorts=[]; S.fill=4; }
+  };
+}
+
+/* ---------------- charts ---------------- */
+let hist, donut, map, marker, lastAlertCount = null, currentBin = "BIN-001", built = false;
+function buildCharts(){
+  Chart.defaults.color = css("--muted");
+  Chart.defaults.font.family = "Manrope, system-ui, sans-serif";
+  Chart.defaults.borderColor = "rgba(220,240,228,.06)";
+  const ctx = $("hist").getContext("2d");
+  const grad = ctx.createLinearGradient(0,0,0,300);
+  grad.addColorStop(0,"rgba(216,179,106,.35)"); grad.addColorStop(1,"rgba(216,179,106,0)");
+  hist = new Chart(ctx, {type:"line",
     data:{labels:[],datasets:[
-      {label:"Fill %",data:[],borderColor:"#1f8a4c",backgroundColor:"rgba(31,138,76,.12)",fill:true,tension:.3,pointRadius:0,borderWidth:2},
-      {label:"Alert threshold",data:[],borderColor:"#c83a2c",borderDash:[6,4],pointRadius:0,borderWidth:1.5,fill:false}
-    ]},
-    options:{animation:false,maintainAspectRatio:false,scales:{y:{min:0,max:100,ticks:{callback:v=>v+"%"}},x:{ticks:{maxTicksLimit:6}}},
-      plugins:{legend:{position:"bottom",labels:{boxWidth:12}}}}
-  });
-  classChart = new Chart($("classChart"), {
-    type:"bar",
-    data:{labels:CLASSES,datasets:[{data:CLASSES.map(()=>0),backgroundColor:CLASSES.map(c=>COLORS[c]),borderRadius:6}]},
-    options:{animation:false,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}
-  });
+      {label:"Fill %",data:[],borderColor:css("--brass"),backgroundColor:grad,fill:true,tension:.35,borderWidth:2.4,pointRadius:0,pointHoverRadius:5,spanGaps:false},
+      {label:"Alert threshold",data:[],borderColor:css("--crit"),borderDash:[6,5],borderWidth:1.4,pointRadius:0,fill:false}]},
+    options:{animation:{duration:400},maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
+      scales:{y:{min:0,max:100,ticks:{callback:v=>v+"%",stepSize:20},grid:{color:"rgba(220,240,228,.06)"}},x:{grid:{display:false},ticks:{maxTicksLimit:6,maxRotation:0}}},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:"#1b2a23",borderColor:"rgba(220,240,228,.15)",borderWidth:1,padding:10,displayColors:false,
+        callbacks:{label:c=>c.datasetIndex===0?(c.raw==null?"Sensor fault":`Fill ${c.raw}%`):`Threshold ${c.raw}%`}}}}});
+  donut = new Chart($("donut"), {type:"doughnut",
+    data:{labels:CLASSES,datasets:[{data:CLASSES.map(()=>0),backgroundColor:CLASSES.map(c=>COL[c]),borderColor:css("--panel"),borderWidth:3,hoverOffset:6}]},
+    options:{cutout:"70%",maintainAspectRatio:false,animation:{duration:400},plugins:{legend:{display:false}}}});
+}
+function buildMap(b){
+  if (DEMO || !window.L) return;
+  map = L.map("map",{zoomControl:true,attributionControl:true}).setView([b.lat,b.lng],16);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:19,attribution:"© OpenStreetMap © CARTO"}).addTo(map);
+  marker = L.circleMarker([b.lat,b.lng],{radius:11,weight:3,color:"#0b1310",fillColor:css("--ok"),fillOpacity:1}).addTo(map);
 }
 
-function initMap(b){
-  map = L.map("map").setView([b.lat,b.lng],16);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(map);
-  marker = L.circleMarker([b.lat,b.lng],{radius:12,weight:3,color:"#fff",fillColor:"#1f8a4c",fillOpacity:1}).addTo(map);
+/* ---------------- render ---------------- */
+function etaText(history, thr){
+  // only use readings since the last emptying (a big drop), so a collection does not distort the trend
+  const all = history.filter(h => h.fill_pct != null);
+  let start = 0;
+  for (let i = all.length-1; i > 0; i--){ if (all[i-1].fill_pct - all[i].fill_pct > 10){ start = i; break; } }
+  const pts = all.slice(start).slice(-12);
+  if (pts.length < 4) return ["–","needs a few more readings"];
+  const last = pts[pts.length-1];
+  if (last.fill_pct >= thr) return ["Now","bin is at or above the alert level"];
+  const t0 = new Date(pts[0].ts).getTime();
+  const xs = pts.map(p => (new Date(p.ts).getTime()-t0)/60000), ys = pts.map(p => p.fill_pct);
+  const n = xs.length, mx = xs.reduce((a,b)=>a+b)/n, my = ys.reduce((a,b)=>a+b)/n;
+  let num=0, den=0; for (let i=0;i<n;i++){ num += (xs[i]-mx)*(ys[i]-my); den += (xs[i]-mx)**2; }
+  const slope = den ? num/den : 0;                       // % per minute
+  if (slope <= 0.01) return ["Stable","fill level is not rising"];
+  const mins = (thr - last.fill_pct)/slope;
+  const txt = mins < 1 ? "< 1 min" : mins < 60 ? `${Math.round(mins)} min` : mins < 2880 ? `${(mins/60).toFixed(1)} h` : `${Math.round(mins/1440)} days`;
+  return [txt, `rising ${slope.toFixed(slope<1?2:1)}% per minute`];
 }
 
-function renderBin(b, threshold){
-  const r = b.last;
-  const status = !r ? "NO DATA" : (!b.online ? "OFFLINE" : r.status);
-  const tag = $("bintag");
-  tag.textContent = status;
-  tag.className = "tag " + (status==="OK" ? "ok" : status==="FULL" ? "full" : "fault");
-  const fill = r && r.fill_pct!=null ? r.fill_pct : null;
-  $("bigpct").textContent = fill==null ? "–" : Math.round(fill)+"%";
-  $("k-fill").textContent = fill==null ? "–" : Math.round(fill)+"%";
-  $("k-fill-h").textContent = b.bin_id + " · " + status.toLowerCase();
-  const bar = $("fillbar");
-  bar.style.height = (fill||0)+"%";
-  bar.style.background = fill>=threshold ? "var(--red)" : fill>=threshold-20 ? "var(--amber)" : "var(--green)";
-  $("thrline").style.bottom = threshold+"%";
-  $("thrline").querySelector("span").textContent = threshold+"%";
-  $("b-id").textContent = b.bin_id;
-  $("b-loc").textContent = b.location;
-  $("b-dist").textContent = r && r.distance_cm!=null ? r.distance_cm.toFixed(1)+" cm" : "–";
-  $("b-online").textContent = b.online ? "Online" : "Offline";
-  $("b-ts").textContent = r ? fmtTime(r.ts) : "–";
-  $("b-coll").textContent = b.collection==="PENDING" ? "Pending pickup" : "Not required";
+function renderBin(b, thr){
+  const r = b.last, status = !r ? "NO DATA" : (!b.online ? "OFFLINE" : r.status);
+  const fill = r && r.fill_pct != null ? r.fill_pct : null;
+  const color = status==="FULL" ? css("--crit") : (status==="FAULT"||status==="OFFLINE") ? css("--warn") : fill!=null && fill>=thr-20 ? css("--warn") : css("--ok");
+  $("ring").setAttribute("stroke-dasharray", `${(fill||0)/100*RING} ${RING}`);
+  $("ring").setAttribute("stroke", color);
+  const a = thr/100*2*Math.PI;   // threshold tick (svg rotated -90deg)
+  $("thrTick").setAttribute("x1", 110+80*Math.cos(a)); $("thrTick").setAttribute("y1", 110+80*Math.sin(a));
+  $("thrTick").setAttribute("x2", 110+104*Math.cos(a)); $("thrTick").setAttribute("y2", 110+104*Math.sin(a));
+  $("pct").innerHTML = fill==null ? "–" : `${Math.round(fill)}<small>%</small>`;
+  const chip = $("chip"); chip.textContent = status==="FULL" ? "Collect now" : status==="OK" ? "Normal" : status==="FAULT" ? "Sensor fault" : status==="OFFLINE" ? "Offline" : "No data";
+  chip.className = "chip " + (status==="OK" ? "ok" : status==="FULL" ? "full" : "fault");
+  $("binId").textContent = b.bin_id;
+  $("fLoc").textContent = b.location;
+  $("fDist").textContent = r && r.distance_cm!=null ? r.distance_cm.toFixed(1)+" cm" : "–";
+  $("fLink").innerHTML = b.online ? '<span style="color:var(--ok)">Online</span>' : '<span style="color:var(--warn)">Offline</span>';
+  $("fTs").textContent = r ? tFmt(r.ts) : "–";
+  $("fColl").innerHTML = b.collection==="PENDING" ? '<span style="color:var(--crit)">Pickup pending</span>' : "Not required";
   $("collectBtn").disabled = b.collection!=="PENDING";
-  if (marker) marker.setStyle({fillColor: status==="FULL" ? "#c83a2c" : status==="OK" ? "#1f8a4c" : "#d98b06"});
-  if (marker) marker.bindTooltip(`${b.bin_id} · ${fill==null?"–":Math.round(fill)+"%"}`);
-
-  histChart.data.labels = b.history.map(h=>fmtTime(h.ts));
-  histChart.data.datasets[0].data = b.history.map(h=>h.fill_pct);
-  histChart.data.datasets[1].data = b.history.map(()=>threshold);
-  histChart.update();
+  const [eta, etaS] = etaText(b.history, thr); $("eta").textContent = eta; $("etaS").textContent = etaS;
+  $("locName").textContent = b.location; $("locCoord").textContent = `${b.lat.toFixed(4)}° N, ${b.lng.toFixed(4)}° E`;
+  if (marker) marker.setStyle({fillColor: color});
+  hist.data.labels = b.history.map(h => tFmt(h.ts));
+  hist.data.datasets[0].data = b.history.map(h => h.fill_pct);
+  hist.data.datasets[1].data = b.history.map(() => thr);
+  hist.update();
+  $("histMeta").textContent = `${b.history.length} readings`;
 }
 
 function renderAlerts(alerts){
-  $("alerts").innerHTML = alerts.length ? alerts.map(a=>`<tr>
-    <td>${fmtDT(a.raised_ts)}</td>
-    <td><span class="tag ${a.kind==="FULL"?"full":"fault"}">${a.kind==="FULL"?"Collect":"Sensor fault"}</span></td>
-    <td>${a.fill_pct==null?"–":Math.round(a.fill_pct)+"%"}</td>
-    <td>${a.cleared_ts ? fmtTime(a.cleared_ts) : "<b style='color:var(--red)'>open</b>"}</td></tr>`).join("")
-    : `<tr><td colspan="4" class="empty">No alerts yet</td></tr>`;
+  const open = alerts.filter(a => !a.cleared_ts).length;
+  $("alertMeta").textContent = open ? `${open} open` : "all clear";
+  $("alerts").innerHTML = alerts.length ? alerts.slice(0,20).map(a => {
+    const full = a.kind==="FULL", c = full ? "var(--crit)" : "var(--warn)";
+    return `<div class="ev"><span class="bar" style="background:${c}"></span>
+      <div><div style="font-weight:600">${full ? `Bin reached ${a.fill_pct==null?"–":Math.round(a.fill_pct)+"%"}` : "Sensor fault"}</div>
+      <div class="sub">${esc(a.bin_id)} · ${a.cleared_ts ? (full ? "collected " : "recovered ") + tFmt(a.cleared_ts) : `<span style="color:${c};font-weight:600">open</span>`}</div></div>
+      <span class="t">${dtFmt(a.raised_ts)}</span></div>`;
+  }).join("") : `<div class="empty">No alerts yet. An alert appears when the bin reaches the threshold.</div>`;
 }
 
-function renderConfusion(rows){
-  if(!rows.length){ $("cm").innerHTML = `<div class="empty">Verify sorted items (enter the actual class) to build the matrix.</div>`; return; }
-  const used = CLASSES.filter(c => rows.some(r=>r.actual===c||r.predicted===c));
-  const get = (a,p) => (rows.find(r=>r.actual===a&&r.predicted===p)||{}).n||0;
-  let h = `<table class="cm"><thead><tr><th></th>${used.map(c=>`<th>${c.slice(0,4)}</th>`).join("")}</tr></thead><tbody>`;
-  for(const a of used){
-    h += `<tr><th style="text-align:left">${a}</th>` + used.map(p=>{
-      const n=get(a,p); return `<td class="${a===p?"diag":(n?"off":"")}">${n||""}</td>`}).join("") + `</tr>`;
+function renderStreams(by){
+  const vals = CLASSES.map(c => by[c]||0), tot = vals.reduce((a,b)=>a+b,0);
+  donut.data.datasets[0].data = tot ? vals : CLASSES.map(()=>0); donut.update();
+  $("legend").innerHTML = CLASSES.map((c,i) => `<div><i style="background:${COL[c]}"></i><span style="text-transform:capitalize">${c}</span><b>${vals[i]}${tot?` <span style="color:var(--faint);font-weight:500">${Math.round(100*vals[i]/tot)}%</span>`:""}</b></div>`).join("");
+}
+
+function renderHeat(rows, t){
+  if (!rows.length){ $("heat").innerHTML = `<div class="empty">Verify sorted items (enter the actual class) to build the matrix.</div>`; $("accLine").innerHTML=""; return; }
+  const used = CLASSES.filter(c => rows.some(r => r.actual===c || r.predicted===c));
+  const get = (a,p) => (rows.find(r => r.actual===a && r.predicted===p)||{}).n||0;
+  const max = Math.max(...rows.map(r => r.n));
+  let h = `<table class="heat"><thead><tr><th></th>${used.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>`;
+  for (const a of used){
+    h += `<tr><th class="rh">${a}</th>` + used.map(p => {
+      const n = get(a,p), k = n/max, diag = a===p;
+      const bg = !n ? "rgba(255,255,255,.025)" : diag ? `rgba(85,195,143,${.18+.62*k})` : `rgba(240,103,90,${.15+.55*k})`;
+      return `<td style="background:${bg};color:${n? "#eaf3ee":"var(--faint)"}">${n||"·"}</td>`;
+    }).join("") + "</tr>";
   }
-  $("cm").innerHTML = h + `</tbody></table>`;
+  $("heat").innerHTML = h + "</tbody></table>";
+  $("accLine").innerHTML = `<span>AI accuracy <b>${t.ai_accuracy ?? "–"}%</b></span><span>Sorting accuracy <b>${t.sort_accuracy ?? "–"}%</b></span><span>Verified items <b>${t.ai_verified}</b></span>`;
 }
 
-function renderSorts(s){
-  $("sorts").innerHTML = s.length ? s.map(e=>`<tr>
-    <td>${e.id}</td><td>${fmtTime(e.ts)}</td>
-    <td><span style="color:${COLORS[e.predicted]};font-weight:600">${e.predicted}</span></td>
-    <td>${e.confidence==null?"–":(e.confidence*100).toFixed(0)+"%"}</td>
-    <td>${e.actual||"<span style='color:var(--muted)'>unverified</span>"}</td>
-    <td>${e.destination}</td>
-    <td>${e.sorted_ok==null?"–":e.sorted_ok?"✔":"<span style='color:var(--red)'>✖</span>"}</td></tr>`).join("")
-    : `<tr><td colspan="7" class="empty">No items sorted yet</td></tr>`;
+function renderSorts(list){
+  $("sortMeta").textContent = list.length ? `latest ${list.length}` : "";
+  $("sorts").innerHTML = list.length ? list.map(e => {
+    const c = e.confidence==null ? null : Math.round(e.confidence*100);
+    const cc = c==null ? "var(--faint)" : c>=85 ? "var(--ok)" : c>=70 ? "var(--brass)" : "var(--crit)";
+    return `<tr><td class="num" style="color:var(--faint)">${e.id}</td><td class="num">${tFmt(e.ts)}</td>
+      <td><span class="cls"><i style="background:${COL[e.predicted]}"></i>${esc(e.predicted)}</span></td>
+      <td><span class="confbar"><span style="width:${c||0}%;background:${cc}"></span></span><span class="num">${c==null?"–":c+"%"}</span></td>
+      <td style="text-transform:capitalize">${e.actual ? esc(e.actual) : '<span style="color:var(--faint)">unverified</span>'}</td>
+      <td><span class="cls"><i style="background:${COL[e.destination]}"></i>${esc(e.destination)}</span></td>
+      <td>${e.sorted_ok==null ? "–" : e.sorted_ok ? '<span class="okc">✓</span>' : '<span class="bad">✕</span>'}</td></tr>`;
+  }).join("") : `<tr><td colspan="7"><div class="empty">No items sorted yet</div></td></tr>`;
+}
+
+function toast(title, sub){
+  $("toastT").textContent = title; $("toastS").textContent = sub;
+  $("toast").classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => $("toast").classList.remove("show"), 5000);
 }
 
 async function refresh(){
   try{
-    const s = await (await fetch("/api/state")).json();
-    if(!histChart){ initCharts(s.threshold); initMap(s.bins[0]); }
-    document.querySelectorAll(".thrv").forEach(e=>e.textContent=s.threshold);
-    renderBin(s.bins[0], s.threshold);
-    currentBin = s.bins[0].bin_id;
-    const t = s.totals;
-    $("k-alerts").textContent = t.alerts_raised;
-    $("k-coll").textContent = t.collections_done;
-    $("k-items").textContent = t.items_sorted;
-    $("k-ai").textContent = t.ai_accuracy==null ? "–" : t.ai_accuracy+"%";
-    $("k-ai-h").textContent = t.ai_verified ? `${t.ai_verified} verified items` : "no verified items";
-    $("k-sort").textContent = t.sort_accuracy==null ? "–" : t.sort_accuracy+"%";
-    $("k-sort-h").textContent = t.sort_checked ? `${t.sort_checked} checked items` : "no checked items";
-    classChart.data.datasets[0].data = CLASSES.map(c=>s.by_class[c]||0); classChart.update();
-    renderAlerts(s.alerts); renderConfusion(s.confusion); renderSorts(s.recent_sorts);
-    $("srvdot").className="dot"; $("updated").textContent = "Live · updated " + fmtTime(s.server_time);
-  }catch(e){ console.error("refresh failed", e);
-    $("srvdot").className="dot off"; $("updated").textContent = "Server unreachable";
+    const s = await api.state();
+    if (!built){ buildCharts(); buildMap(s.bins[0]); built = true; }
+    const b = s.bins[0], t = s.totals; currentBin = b.bin_id;
+    $("thrPill").textContent = s.threshold + "%";
+    renderBin(b, s.threshold);
+    $("kAlerts").textContent = t.alerts_raised; $("kColl").textContent = t.collections_done;
+    $("kCollS").textContent = t.alerts_raised ? `${Math.round(100*t.collections_done/t.alerts_raised)}% of alerts handled` : "alerts cleared";
+    $("kItems").textContent = t.items_sorted;
+    $("kAi").textContent = t.ai_accuracy==null ? "–" : t.ai_accuracy+"%"; $("kAiS").textContent = t.ai_verified ? `${t.ai_verified} verified items` : "no verified items";
+    $("kSort").textContent = t.sort_accuracy==null ? "–" : t.sort_accuracy+"%"; $("kSortS").textContent = t.sort_checked ? `${t.sort_checked} checked items` : "no checked items";
+    renderAlerts(s.alerts); renderStreams(s.by_class); renderHeat(s.confusion, t); renderSorts(s.recent_sorts);
+    if (lastAlertCount !== null && t.alerts_raised > lastAlertCount){
+      const r = b.last; toast(`${b.bin_id} needs collection`, `Fill level reached ${r && r.fill_pct!=null ? Math.round(r.fill_pct) : "–"}% at ${b.location}.`);
+    }
+    lastAlertCount = t.alerts_raised;
+    $("liveDot").className = "live-dot"; $("liveTxt").textContent = "Live · " + tFmt(s.server_time);
+  }catch(e){
+    console.error("refresh failed", e);
+    $("liveDot").className = "live-dot off"; $("liveTxt").textContent = "Server unreachable";
   }
 }
 
-$("collectBtn").onclick = async ()=>{ await fetch(`/api/bin/${currentBin}/collected`,{method:"POST"}); refresh(); };
-$("resetBtn").onclick = async ()=>{ if(confirm("Delete all readings, alerts and sorting events?")){ await fetch("/api/reset",{method:"POST"}); refresh(); } };
-refresh(); setInterval(refresh, 3000);
+$("collectBtn").onclick = async () => { await api.collect(currentBin); refresh(); };
+$("resetBtn").onclick = () => { $("modal").hidden = false; $("mNo").focus(); };
+$("mNo").onclick = () => { $("modal").hidden = true; };
+$("mYes").onclick = async () => { $("modal").hidden = true; await api.reset(); lastAlertCount = null; refresh(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("modal").hidden = true; });
+document.querySelectorAll(".rail a").forEach(a => a.addEventListener("click", () => { document.querySelectorAll(".rail a").forEach(x=>x.classList.remove("on")); a.classList.add("on"); }));
+
+if (window.Chart) { refresh(); setInterval(refresh, 3000); }
+else { $("liveTxt").textContent = "Chart library failed to load"; }
 </script>
 </body>
 </html>
