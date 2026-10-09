@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.db
+.venv/
+venv/
+ai/keras_model.h5
+ai/labels.txt
